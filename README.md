@@ -25,6 +25,7 @@ This project was built to strengthen backend engineering skills around API devel
 - Pagination support
 - Integration testing
 - DTO and mapper architecture
+- Interactive Swagger/OpenAPI documentation
  
 ## Project Structure
 
@@ -48,6 +49,13 @@ This project was built to strengthen backend engineering skills around API devel
 - ./gradlew run
 - Application runs on: http://localhost:8080
 
+## Swagger UI
+
+Once the application is running, Swagger UI is available at:
+
+```text
+http://localhost:8080/swagger-ui
+```
 ## Database
 
 - PostgreSQL is used as the persistence layer.
@@ -92,6 +100,18 @@ JSON
     "currentAmount": 500.00,
     "createdAt": "2026-04-18T20:01:40.926647"
     }
+
+## Swagger Documentation
+
+Interactive API documentation is available through Swagger UI.
+
+After running the application, access: http://localhost:8080/swagger-ui
+
+Swagger allows:
+
+- viewing available endpoints
+- testing requests directly from the browser
+- inspecting request/response models
 
 ## Validation 
 
@@ -138,7 +158,6 @@ Runs tests wih: ./gradlew test
 
 ## Future Improvements
 
-- Swagger/OpenAPI documentation
 - JWT authentication
 -  CI/CD pipeline
 -  Dockerising the application

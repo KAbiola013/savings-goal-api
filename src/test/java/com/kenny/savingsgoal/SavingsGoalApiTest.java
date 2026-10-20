@@ -20,7 +20,7 @@ import com.kenny.savingsgoal.dto.SavingsGoalResponse;
 
 
 @MicronautTest
-class SavingsGoalApiTest {
+class   SavingsGoalApiTest {
 
     @Inject
     @Client("/")
@@ -28,7 +28,7 @@ class SavingsGoalApiTest {
 
     @Test
     void shouldCreateSavingsGoal() {
-        String requestBody = """
+        String requestBody = """        
             {
               "name": "Test Goal",
               "targetAmount": 1000.00,
@@ -146,4 +146,63 @@ class SavingsGoalApiTest {
 
         assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getStatus());
     }
+
+    @Test
+    void shouldRejectGoalWithMissingTargetAmount(){
+        String requestBody = """
+            {
+              "name": "No target",
+              "currentAmount": 100
+            }
+            """;
+
+        HttpRequest<String> request = HttpRequest.POST("/v1/goals", requestBody)
+                .contentType(MediaType.APPLICATION_JSON);
+
+        HttpClientResponseException exception = assertThrows(
+                HttpClientResponseException.class,
+                () -> client.toBlocking().exchange(request, String.class)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+
+    }
+
+    @Test
+    void shouldRejectUpdateWithMissingTargetAmount(){
+        String createBody = """
+        {
+          "name": "Original Goal",
+          "targetAmount": 1000.00,
+          "currentAmount": 100.00
+        }
+        """;
+
+        HttpRequest<String> createRequest = HttpRequest.POST("/v1/goals", createBody)
+                .contentType(MediaType.APPLICATION_JSON);
+
+        HttpResponse<SavingsGoalResponse> createResponse =
+                client.toBlocking().exchange(createRequest, SavingsGoalResponse.class);
+
+        Integer createdId = createResponse.body().getId();
+
+        String updateBody = """
+        {
+          "name": "Updated Goal",
+          "currentAmount": 200.00
+        }
+        """;
+
+        HttpRequest<String> updateRequest = HttpRequest.PUT("/v1/goals/" + createdId, updateBody)
+                .contentType(MediaType.APPLICATION_JSON);
+
+        HttpClientResponseException exception = assertThrows(
+                HttpClientResponseException.class,
+                () -> client.toBlocking().exchange(updateRequest, String.class)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+
+    }
+
 }

@@ -3,6 +3,7 @@ package com.kenny.savingsgoal.dto;
 import io.micronaut.serde.annotation.Serdeable;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -14,6 +15,7 @@ public class CreateSavingsGoalRequest {
     @NotBlank
     private String name;
 
+    @NotNull
     @DecimalMin("0.01")
     private BigDecimal targetAmount;
 

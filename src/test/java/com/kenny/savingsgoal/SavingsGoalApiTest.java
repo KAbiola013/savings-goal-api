@@ -148,7 +148,7 @@ class   SavingsGoalApiTest {
     }
 
     @Test
-    void shouldRejectGoalWithMissingTargetAmount(){
+    void shouldRejectGoalWithMissingTargetAmount() {
         String requestBody = """
             {
               "name": "No target",
@@ -165,11 +165,10 @@ class   SavingsGoalApiTest {
         );
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-
     }
 
     @Test
-    void shouldRejectUpdateWithMissingTargetAmount(){
+    void shouldRejectUpdateWithMissingTargetAmount() {
         String createBody = """
         {
           "name": "Original Goal",
@@ -202,7 +201,61 @@ class   SavingsGoalApiTest {
         );
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-
     }
 
+    @Test
+    void shouldRejectGoalWithMissingCurrentAmount() {
+        String requestBody = """
+            {
+              "name": "No current amount",
+              "targetAmount": 1000
+            }
+            """;
+
+        HttpRequest<String> request = HttpRequest.POST("/v1/goals", requestBody)
+                .contentType(MediaType.APPLICATION_JSON);
+
+        HttpClientResponseException exception = assertThrows(
+                HttpClientResponseException.class,
+                () -> client.toBlocking().exchange(request, String.class)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+    @Test
+    void shouldRejectUpdateWithMissingCurrentAmount() {
+        String createBody = """
+        {
+          "name": "Original Goal",
+          "targetAmount": 1000.00,
+          "currentAmount": 100.00
+        }
+        """;
+
+        HttpRequest<String> createRequest = HttpRequest.POST("/v1/goals", createBody)
+                .contentType(MediaType.APPLICATION_JSON);
+
+        HttpResponse<SavingsGoalResponse> createResponse =
+                client.toBlocking().exchange(createRequest, SavingsGoalResponse.class);
+
+        Integer createdId = createResponse.body().getId();
+
+        String updateBody = """
+            {
+              "name": "No current amount",
+              "targetAmount": 1000
+            }
+            """;
+
+        HttpRequest<String> request = HttpRequest.PUT("/v1/goals/" + createdId, updateBody)
+                .contentType(MediaType.APPLICATION_JSON);
+
+        HttpClientResponseException exception = assertThrows(
+                HttpClientResponseException.class,
+                () -> client.toBlocking().exchange(request, String.class)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
 }

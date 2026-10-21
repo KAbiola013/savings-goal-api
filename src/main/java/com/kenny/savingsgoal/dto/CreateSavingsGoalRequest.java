@@ -19,6 +19,7 @@ public class CreateSavingsGoalRequest {
     @DecimalMin("0.01")
     private BigDecimal targetAmount;
 
+    @NotNull
     @DecimalMin("0.00")
     private BigDecimal currentAmount;
 }

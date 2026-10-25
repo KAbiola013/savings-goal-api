@@ -255,7 +255,49 @@ class   SavingsGoalApiTest {
                 HttpClientResponseException.class,
                 () -> client.toBlocking().exchange(request, String.class)
         );
-
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+    @Test
+    void shouldRejectGoalWithNameTooLong() {
+        String longName = "a".repeat(256);
+        String requestBody = """
+            {
+              "name": "%s",
+              "targetAmount": 1000.00,
+              "currentAmount": 100.00
+            }
+            """.formatted(longName);
+
+        HttpRequest<String> createRequest = HttpRequest.POST("/v1/goals", requestBody)
+                .contentType(MediaType.APPLICATION_JSON);
+
+        HttpClientResponseException exception = assertThrows(
+                HttpClientResponseException.class,
+                () -> client.toBlocking().exchange(createRequest, String.class)
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+    @Test
+    void shouldAcceptGoalWithNameAtMaxLength() {
+        String maxLengthName = "a".repeat(255);
+        String requestBody = """
+            {
+              "name": "%s",
+              "targetAmount": 1000.00,
+              "currentAmount": 100.00
+            }
+            """.formatted(maxLengthName);
+
+        HttpRequest<String> request = HttpRequest.POST("/v1/goals", requestBody)
+                .contentType(MediaType.APPLICATION_JSON);
+
+        HttpResponse<String> response = client.toBlocking().exchange(request, String.class);
+
+        assertEquals(HttpStatus.CREATED, response.getStatus());
+
+        assertTrue(response.body().contains(maxLengthName));
+        assertTrue(response.body().contains("1000.00"));
     }
 }

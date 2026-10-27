@@ -80,6 +80,10 @@ micronaut {
         replaceLogbackXml = true
     }
 
+    tasks.named('run') {
+        environment 'MICRONAUT_ENVIRONMENTS', 'dev'
+    }
+
 }
 
 

@@ -23,7 +23,7 @@ import java.util.List;
 
         public SavingsGoal getGoalById(Integer id) {
             return repository.findById(id).orElseThrow(
-                    () -> new GoalNotFoundException("Goal Not found with id: " + id));
+                    () -> new GoalNotFoundException("Goal not found with id: " + id));
         }
 
         public void deleteGoalById(Integer id) {

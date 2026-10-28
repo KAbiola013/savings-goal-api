@@ -79,12 +79,12 @@ micronaut {
         optimizeNetty = true
         replaceLogbackXml = true
     }
-
-    tasks.named('run') {
-        environment 'MICRONAUT_ENVIRONMENTS', 'dev'
-    }
-
 }
+
+tasks.named('run') {
+    environment 'MICRONAUT_ENVIRONMENTS', 'dev'
+}
+
 
 
 

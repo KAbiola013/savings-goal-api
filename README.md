@@ -1,225 +1,146 @@
-## Savings Goal API
+# Savings Goal API
 
-A RESTful backend API built with Micronaut and PostgreSQL for creating and managing savings goals.
+[![CI](https://github.com/KAbiola013/savings-goal-api/actions/workflows/ci.yml/badge.svg)](https://github.com/KAbiola013/savings-goal-api/actions/workflows/ci.yml)
 
-This project was built to strengthen backend engineering skills around API development, database persistence, validation, testing, and clean layered architecture.
+A REST API for creating and managing savings goals, built with Java 17, Micronaut and PostgreSQL.
 
-## Tech Stack
-- Java 17
-- Micronaut
-- PostgreSQL
-- Docker
-- Flyway
-- Gradle
-- JUnit 5
+I built this to practise backend engineering outside work: layered architecture, input validation, database migrations, error handling and testing, with every change made through a pull request and checked by CI.
 
-## Features
+## Tech stack
 
-- Create savings goals
-- Retrieve all goals
-- Retrieve goal by ID
-- Update existing goals
-- Delete goals
-- Validation for invalid requests
-- Global exception handling
-- Pagination support
-- Integration testing
-- DTO and mapper architecture
-- Interactive Swagger/OpenAPI documentation
- 
-## Project Structure
+- Java 17, Micronaut 4
+- PostgreSQL 15, Flyway migrations, Micronaut Data JDBC
+- JUnit 5, Micronaut Test, Testcontainers (via Micronaut Test Resources)
+- Gradle, Docker Compose, GitHub Actions
+- OpenAPI / Swagger UI
 
-- src/main/java/com/kenny/savingsgoal 
-- ├── controller
-- ├── service
-- ├── repository
-- ├── model
-- ├── dto
-- ├── mapper
-- ├── exception
+## Endpoints
 
-## Running the Application
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/v1/goals` | Create a goal |
+| GET | `/v1/goals?page=0&size=10` | List goals (paginated) |
+| GET | `/v1/goals/{id}` | Get one goal |
+| PUT | `/v1/goals/{id}` | Replace a goal |
+| DELETE | `/v1/goals/{id}` | Delete a goal |
 
-1. Start PostgreSQL with Docker
+Interactive documentation is available at `http://localhost:8080/swagger-ui` while the app is running.
 
-- docker compose up -d
+### Example
 
-2. Run the application
+```http
+POST /v1/goals
+Content-Type: application/json
 
-- ./gradlew run
-- Application runs on: http://localhost:8080
-
-## Swagger UI
-
-Once the application is running, Swagger UI is available at:
-
-```text
-http://localhost:8080/swagger-ui
+{
+  "name": "Emergency Fund",
+  "targetAmount": 10000.00,
+  "currentAmount": 500.00
+}
 ```
-## Database
 
-- PostgreSQL is used as the persistence layer.
+ Response (`201 Created`):
+  
+  ```json
+  {
+  "id": 1,
+  "name": "Emergency Fund",
+  "targetAmount": 10000.00,
+  "currentAmount": 500.00,
+  "createdAt": "2026-10-28T14:52:03.692"
+}
+```
 
-- Flyway migrations are used for database schema versioning.
+## Validation
 
-- Example table: savings_goal
+Requests are validated before they reach the service layer. Invalid requests return `400 Bad Request` with the field that failed.
 
-## Endpoints 
+| Field | Rules |
+|---|---|
+| `name` | required, not blank, maximum 255 characters |
+| `targetAmount` | required, at least 0.01 |
+| `currentAmount` | required, at least 0.00 (zero is allowed; a missing value is not) |
 
-| Method | Endpoint         | Description           |
-| ------ | ---------------- | --------------------- |
-| POST   | `/v1/goals`      | Create a savings goal |
-| GET    | `/v1/goals`      | Retrieve all goals    |
-| GET    | `/v1/goals/{id}` | Retrieve goal by ID   |
-| PUT    | `/v1/goals/{id}` | Update goal           |
-| DELETE | `/v1/goals/{id}` | Delete goal           |
+`PUT` replaces the whole goal, so the same rules apply to updates.
 
-## Example Request 
-Request
-- Create Goal:  POST /v1/goals
--  Content-Type: application/json
+## Error handling
 
-JSON
+| Situation | Status | Response |
+|---|---|---|
+| Validation failure | 400 | which field failed and why, e.g. `request.targetAmount: must not be null` |
+| Goal not found | 404 | `{"message": "Goal not found with id: 999", "status": 404}` |
+| Anything unexpected | 500 | `{"message": "An unexpected error occurred", "status": 500}` |
 
-    {
+Unexpected errors are logged in full on the server (with the request method and path), but the client only receives a generic message. This avoids leaking database or framework details in error responses.
 
-    "name": "Emergency Fund",
+## Running locally
 
-    "targetAmount": 10000.00,
+Requirements: Java 17 and Docker.
 
-    "currentAmount": 500.00
-    }
+1. Start PostgreSQL:
 
-## Example Response
-JSON
+   ```bash
+   docker compose up -d
+   ```
 
-    {
-    "id": 1,
-    "name": "Emergency Fund",
-    "targetAmount": 10000.00,
-    "currentAmount": 500.00,
-    "createdAt": "2026-04-18T20:01:40.926647"
-    }
+2. Run the app (uses the `dev` environment and the Compose database):
 
-## Swagger Documentation
+   ```bash
+   ./gradlew run
+   ```
 
-Interactive API documentation is available through Swagger UI.
+   The API runs on `http://localhost:8080`.
 
-After running the application, access: http://localhost:8080/swagger-ui
+### Configuration
 
-Swagger allows:
+Database settings are read from environment variables, with local defaults for development:
 
-- viewing available endpoints
-- testing requests directly from the browser
-- inspecting request/response models
+| Variable | Default |
+|---|---|
+| `DB_URL` | `jdbc:postgresql://localhost:5432/savings_goals` |
+| `DB_USERNAME` | `postgres` |
+| `DB_PASSWORD` | `postgres` |
 
-## Validation 
+Docker Compose reads `POSTGRES_DB`, `POSTGRES_USER` and `POSTGRES_PASSWORD` in the same way.
 
-The API validates incoming requests using Jakarta Validation.
+## Testing
 
-Examples:
+```bash
+./gradlew test
+```
 
-- Name cannot be blank
-- Target amount must be greater than 0
-- Current amount cannot be negative
+The tests only need Docker. They do not use the development database: Micronaut Test Resources starts a throwaway `postgres:15` container for each run, so every run starts from a clean state and leaves nothing behind.
 
-Invalid request returns: 400 Bad Request
+The suite includes:
 
-## Error Handling
+- **Integration tests** that call the API over HTTP against a real PostgreSQL database, covering successful requests, validation failures (including boundary cases such as a 255 vs 256 character name) and not-found responses
+- **A unit test** for the catch-all exception handler, verified by deliberately breaking the handler and confirming the test fails
 
-Custom exception handling is implemented using a global exception handler.
+GitHub Actions runs the full suite on every pull request and every push to `main`.
 
-Example response:
+**Troubleshooting:** on Docker Engine 29 or later, Testcontainers may fail to connect with a `400` error. Setting the Docker API version on your machine fixes it:
 
-    "status": 404,
-    {
-    "message": "Goal not found with id: 999"
-    }
+```bash
+echo "api.version=1.44" > ~/.docker-java.properties
+```
 
-## Pagination
+## Project structure
 
-The API supports pagination for retrieving goals.
+```
+src/main/java/com/kenny/savingsgoal
+├── controller   HTTP endpoints
+├── dto          request and response objects, with validation rules
+├── mapper       converts between DTOs and entities
+├── service      business logic
+├── repository   database access (Micronaut Data)
+├── model        database entities
+└── exception    exception types and handlers
+```
 
-Example: GET /v1/goals?page=0&size=5
+## Possible improvements
 
-##Testing 
-
-Integration tests were implemented using Micronaut Test and JUnit 5.
-
-Test coverage includes:
-
-- Successful creation
-- Validation failures
-- Resource not found scenarios
-- Updating goals
-- Deleting goals
-
-Runs tests wih: ./gradlew test
-
-## Future Improvements
-
-- JWT authentication
--  CI/CD pipeline
--  Dockerising the application
--  Deployment to cloud infrastructure
--  Advanced filtering and sorting
-
-## Author
-Kehinde Abiola
-
-## Micronaut 4.10.11 Documentation
-
-- [User Guide](https://docs.micronaut.io/4.10.11/guide/index.html)
-- [API Reference](https://docs.micronaut.io/4.10.11/api/index.html)
-- [Configuration Reference](https://docs.micronaut.io/4.10.11/guide/configurationreference.html)
-- [Micronaut Guides](https://guides.micronaut.io/index.html)
----
-
-- [Shadow Gradle Plugin](https://gradleup.com/shadow/)
-- [Micronaut Gradle Plugin documentation](https://micronaut-projects.github.io/micronaut-gradle-plugin/latest/)
-- [GraalVM Gradle Plugin documentation](https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html)
-## Feature serialization-jackson documentation
-
-
-- [Micronaut Serialization Jackson Core documentation](https://micronaut-projects.github.io/micronaut-serialization/latest/guide/)
-
-
-## Feature flyway documentation
-
-
-- [Micronaut Flyway Database Migration documentation](https://micronaut-projects.github.io/micronaut-flyway/latest/guide/index.html)
-
-
-- [https://flywaydb.org/](https://flywaydb.org/)
-
-
-## Feature micronaut-aot documentation
-
-
-- [Micronaut AOT documentation](https://micronaut-projects.github.io/micronaut-aot/latest/guide/)
-
-
-## Feature jdbc-hikari documentation
-
-
-- [Micronaut Hikari JDBC Connection Pool documentation](https://micronaut-projects.github.io/micronaut-sql/latest/guide/index.html#jdbc)
-
-
-## Feature validation documentation
-
-
-- [Micronaut Validation documentation](https://micronaut-projects.github.io/micronaut-validation/latest/guide/)
-
-
-## Feature data-jdbc documentation
-
-
-- [Micronaut Data JDBC documentation](https://micronaut-projects.github.io/micronaut-data/latest/guide/index.html#jdbc)
-
-
-## Feature test-resources documentation
-
-
-- [Micronaut Test Resources documentation](https://micronaut-projects.github.io/micronaut-test-resources/latest/guide/)
-
-
+- Return page metadata (total count, page number) from the list endpoint
+- Business rules, such as contributions towards a goal and preventing `currentAmount` exceeding `targetAmount`
+- Store `createdAt` with a time zone (`Instant` or `OffsetDateTime`)
+- A `NOT NULL` database constraint on `current_amount` to back up the request validation
+- Authentication

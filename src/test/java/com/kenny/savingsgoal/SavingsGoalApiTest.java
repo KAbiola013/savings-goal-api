@@ -78,7 +78,6 @@ class   SavingsGoalApiTest {
         );
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-        System.out.println(exception.getResponse().getBody(String.class).orElse("NO BODY"));
     }
 
     @Test

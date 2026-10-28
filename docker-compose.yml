@@ -1,13 +1,12 @@
 
-
 services:
   postgres:
     image: postgres:15
     container_name: savings-goal-db
     environment:
-      POSTGRES_DB: savings_goals
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-savings_goals}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
